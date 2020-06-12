@@ -60,6 +60,7 @@ class Graph():
                     path_copy = list(path)
                     path_copy.append(self.vertices[current][key])
                     q.enqueue(path_copy)
+        return None
     def convert_room_to_path(self, v1, path):
         if len(path) > 1:
             new_path = []
@@ -67,9 +68,11 @@ class Graph():
             while len(path) > 0:
                 for key in self.vertices[current]:
                     if self.vertices[current][key] == path[0]:
+                        print(path[0],key)
                         new_path.append(key)
                         current = path.pop(0)
                         break
+            print (new_path)
             return new_path
         
 class Stack():
@@ -95,9 +98,9 @@ world = World()
 # You may uncomment the smaller graphs for development and testing purposes.
 # map_file = "maps/test_line.txt"
 # map_file = "maps/test_cross.txt"
-map_file = "maps/test_loop.txt"
+# map_file = "maps/test_loop.txt"
 # map_file = "maps/test_loop_fork.txt"
-# map_file = "maps/main_maze.txt"
+map_file = "maps/main_maze.txt"
 
 # Loads the map into a dictionary
 room_graph=literal_eval(open(map_file, "r").read())
@@ -131,7 +134,7 @@ def reverse_path(direction):
 ###################################################################################
 def fill_graph():
     traversal = []
-    visited = []
+    visited = [0]
     s = Stack()
     g = Graph()    
 
@@ -143,7 +146,11 @@ def fill_graph():
     while s.size() > 0:
         path = s.pop()
         movement = path[-1]
+        print(player.current_room.id)
+        print(movement)
         last_room = player.current_room.id
+        # print(player.current_room.id,movement)
+        # print(movement,path,g.get_neighbors(last_room))
         player.travel(movement)
         traversal.append(movement)
 
@@ -152,7 +159,9 @@ def fill_graph():
             g.add_vertex(player.current_room.id,player.current_room.get_exits())
             g.add_edge(last_room,player.current_room.id,movement)
             g.add_edge(player.current_room.id,last_room,reverse_path(movement))
-        
+        elif g.get_neighbors(last_room)[movement] == '?':
+            g.add_edge(last_room,player.current_room.id,movement)
+            g.add_edge(player.current_room.id,last_room,reverse_path(movement))
         for key in g.get_neighbors(player.current_room.id):
             if g.get_neighbors(player.current_room.id)[key] == '?':
                 path_copy = list(path)
@@ -162,14 +171,26 @@ def fill_graph():
             else:
                 back_path = g.bfs(player.current_room.id)
                 if back_path == None:
-                    print(traversal)
                     return traversal
                 elif len(back_path) > 1:
                     new_path = g.convert_room_to_path(player.current_room.id,back_path)
-                    for e in new_path:
+                    if len(new_path) == 1:
                         path_copy = list(path)
-                        path_copy.append(e)
+                        path_copy.append(new_path[0])
                         s.push(path_copy)
+                        break
+                    else:
+                        path_copy = list(path)
+                        for m in range(len(new_path)-1,-1,-1):
+                            path_copy.append(new_path[m])
+                            s.push(path_copy)
+                        break
+
+                    # for e in range(len(new_path)-1,0,-1):
+                    #     path_copy = list(path)
+                    #     path_copy.append(new_path[e])
+                    #     s.push(path_copy)
+                    
             
                     
         
@@ -177,7 +198,7 @@ def fill_graph():
     print(traversal)
     return traversal        
 
-
+'n', 'n', 's', 's', 's', 's', 'w', 'w', 'n', 'n', 'e', 'e', 'w', 'e'
 
 
 traversal_path = fill_graph()
